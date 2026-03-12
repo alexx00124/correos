@@ -1,0 +1,30 @@
+{
+  "name": "correos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MVP de envio de email por lotes con importacion desde Excel",
+  "type": "module",
+  "scripts": {
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "import:excel": "node src/scripts/import-excel.js",
+    "campaign:create": "node src/scripts/create-campaign.js",
+    "campaign:queue": "node src/scripts/queue-campaign.js",
+    "worker:send": "node src/worker/send-worker.js",
+    "server:webhooks": "node src/server/webhooks.js",
+    "server:panel": "node src/server/webhooks.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.5.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "nodemailer": "^6.10.0",
+    "uuid": "^11.1.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "prisma": "^6.5.0"
+  }
+}
