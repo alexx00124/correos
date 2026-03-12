@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriberStatus {
+  active
+  unsubscribed
+  bounced
+  complained
+}
+
+enum CampaignStatus {
+  draft
+  queued
+  sending
+  completed
+  paused
+}
+
+enum MessageStatus {
+  queued
+  sent
+  failed
+  suppressed
+}
+
+model Subscriber {
+  id          Int              @id @default(autoincrement())
+  email       String           @unique
+  fullName    String?
+  status      SubscriberStatus @default(active)
+  consentAt   DateTime?
+  source      String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  messages    Message[]
+
+  @@index([status])
+}
+
+model Campaign {
+  id         Int            @id @default(autoincrement())
+  name       String
+  subject    String
+  fromName   String
+  fromEmail  String
+  htmlBody   String
+  textBody   String
+  status     CampaignStatus @default(draft)
+  scheduledAt DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  messages   Message[]
+}
+
+model Message {
+  id                Int           @id @default(autoincrement())
+  campaignId        Int
+  subscriberId      Int
+  toEmail           String
+  provider          String        @default("smtp")
+  providerMessageId String?
+  status            MessageStatus @default(queued)
+  attempts          Int           @default(0)
+  errorCode         String?
+  errorMessage      String?
+  queuedAt          DateTime      @default(now())
+  sentAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  campaign          Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriber        Subscriber    @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  events            MessageEvent[]
+
+  @@unique([campaignId, subscriberId])
+  @@index([status])
+  @@index([campaignId])
+  @@index([providerMessageId])
+}
+
+model MessageEvent {
+  id                Int      @id @default(autoincrement())
+  messageId         Int?
+  eventType         String
+  eventTs           DateTime @default(now())
+  provider          String
+  providerEventId   String?
+  providerMessageId String?
+  recipientEmail    String?
+  metaJson          Json?
+  createdAt         DateTime @default(now())
+  message           Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerEventId])
+  @@index([providerMessageId])
+  @@index([eventType])
+}
+
+model SuppressionGlobal {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  reason    String
+  source    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
